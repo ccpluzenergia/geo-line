@@ -1,0 +1,40 @@
+# Publica el visor en GitHub Pages y actualiza las emergencias de bomberos cada 10 minutos.
+# Ubicación en el repositorio: .github/workflows/publicar.yml
+name: Publicar sitio y emergencias
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Armar el sitio con las emergencias actuales
+        run: |
+          mkdir -p sitio
+          cp index.html sitio/
+          python3 emergencias.py sitio/emergencias.json
+          touch sitio/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: sitio
+      - id: deploy
+        uses: actions/deploy-pages@v4
